@@ -1,9 +1,5 @@
 FROM node:24-alpine AS base
 
-# ******************************SETUP PNPM*********************************
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
 
 # ******************************INSTALLATION**************************************
 FROM base AS installer
@@ -11,20 +7,53 @@ FROM base AS installer
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* pnpm-workspace.yaml* .npmrc* ./
 
-RUN pnpm install --frozen-lockfile
+# Install project dependencies with frozen lockfile for reproducible builds
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    --mount=type=cache,target=/root/.local/share/pnpm/store \
+  if [ -f package-lock.json ]; then \
+    npm ci --no-audit --no-fund; \
+  elif [ -f yarn.lock ]; then \
+    corepack enable yarn && yarn install --frozen-lockfile --production=false; \
+  elif [ -f pnpm-lock.yaml ]; then \
+    corepack enable pnpm && pnpm install --frozen-lockfile; \
+  else \
+    echo "No lockfile found." && exit 1; \
+  fi
 
 # ******************************BUILD THE APP*************************************
 FROM base AS builder
 
 WORKDIR /app
 
-COPY --from=installer /app .
+COPY --from=installer /app/node_modules ./node_modules
 COPY . .
-RUN pnpm --filter emails run build:package
-RUN pnpm install
-RUN pnpm build
+
+ENV NODE_ENV=production
+
+# Build the "emails" workspace package first (if present)
+RUN if [ -f package-lock.json ]; then \
+    npm run build:package --workspace=emails; \
+  elif [ -f yarn.lock ]; then \
+    corepack enable yarn && yarn workspace emails run build:package; \
+  elif [ -f pnpm-lock.yaml ]; then \
+    corepack enable pnpm && pnpm --filter emails run build:package; \
+  else \
+    echo "No lockfile found." && exit 1; \
+  fi
+
+# Build the main app
+RUN if [ -f package-lock.json ]; then \
+    npm run build; \
+  elif [ -f yarn.lock ]; then \
+    corepack enable yarn && yarn build; \
+  elif [ -f pnpm-lock.yaml ]; then \
+    corepack enable pnpm && pnpm build; \
+  else \
+    echo "No lockfile found." && exit 1; \
+  fi
 
 # ******************************RUN THE APP***********************************
 FROM base AS runner
