@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AuthController } from "@/controllers";
-
 vi.mock("@/services", () => ({
   CookieService: {
     ACCESS_TOKEN: {
@@ -11,30 +10,6 @@ vi.mock("@/services", () => ({
       name: "refreshToken",
       cookie: { httpOnly: false, sameSite: "lax" },
     },
-  },
-}));
-
-vi.mock("@/events", () => ({
-  getSystemCustomErrorMsgByKey: (key: string) => key,
-}));
-
-vi.mock("@/libs", () => ({
-  ApiError: class ApiError extends Error {
-    status: number;
-    constructor(status: number, message: string) {
-      super(message);
-      this.status = status;
-    }
-  },
-  ApiResponse: class ApiResponse {
-    status: number;
-    message: string;
-    data: unknown;
-    constructor(status: number, message: string, data?: unknown) {
-      this.status = status;
-      this.message = message;
-      this.data = data;
-    }
   },
 }));
 

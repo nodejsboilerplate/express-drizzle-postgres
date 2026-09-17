@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UserService } from "@/services";
-import { UserInputValidators } from "@/validators/inputs";
+import { UserInputValidators } from "@repo/zod";
 import { UserRepository } from "@/database/repositories";
 
 const mocks = vi.hoisted(() => ({
@@ -38,10 +38,6 @@ const mocks = vi.hoisted(() => ({
   getVerifyExpiry: vi.fn(),
 }));
 
-vi.mock("@/events", () => ({
-  getSystemCustomErrorMsgByKey: (key: string) => key,
-}));
-
 vi.mock("@/libs", () => ({
   ApiError: class ApiError extends Error {
     status: number;
@@ -59,7 +55,7 @@ vi.mock("@/utils", () => ({
   validationError: mocks.validationError,
 }));
 
-vi.mock("@/validators/inputs", () => ({
+vi.mock("@repo/zod", () => ({
   UserInputValidators: class {
     createUserWithProfileInput(p: unknown) {
       return p;

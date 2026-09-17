@@ -2,30 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MessageController } from "@/controllers";
 import { AUTH_USER } from "../helper";
 
-vi.mock("@/events", () => ({
-  getSystemCustomErrorMsgByKey: (key: string) => key,
-}));
-
-vi.mock("@/libs", () => ({
-  ApiError: class ApiError extends Error {
-    status: number;
-    constructor(status: number, message: string) {
-      super(message);
-      this.status = status;
-    }
-  },
-  ApiResponse: class ApiResponse {
-    status: number;
-    message: string;
-    data: unknown;
-    constructor(status: number, message: string, data?: unknown) {
-      this.status = status;
-      this.message = message;
-      this.data = data;
-    }
-  },
-}));
-
 const buildRes = () => {
   const res: any = {};
   res.status = vi.fn(() => res);
