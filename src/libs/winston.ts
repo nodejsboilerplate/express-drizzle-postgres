@@ -1,6 +1,5 @@
-import { createLogger, format, transports } from "winston";
+import { createLogger, format } from "winston";
 import LokiTransport from "winston-loki";
-import { baseConfig } from "@/config";
 
 const jsonFormat = format.combine(
   format.timestamp(),
@@ -21,9 +20,6 @@ const options = {
       replaceTimestamp: true,
       onConnectionError: (err) => console.error("Loki connection error:", err),
     }),
-    ...(baseConfig.NODE_ENV !== "production"
-      ? [new transports.Console({ format: jsonFormat })]
-      : []),
   ],
 };
 
